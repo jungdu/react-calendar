@@ -1,7 +1,9 @@
 import { getLastElement } from "./array";
 import {
+	getCurrentWeek,
 	getDay,
 	getLastDate,
+	getMilliseconds,
 	getNextMonth,
 	getNextMonthDisplayDates,
 	getPrevMonth,
@@ -119,6 +121,88 @@ describe("getNextMonthDisplayDates", () => {
 			month: 7,
 			date: 2,
 		});
+	});
+});
+
+describe("getCurrentWeek", () => {
+	test("날짜가 포함한 주의 모든 날짜를 리턴", () => {
+		expect(getCurrentWeek({ year: 2022, month: 10, date: 2 })).toEqual([
+			{ year: 2022, month: 10, date: 2 },
+			{ year: 2022, month: 10, date: 3 },
+			{ year: 2022, month: 10, date: 4 },
+			{ year: 2022, month: 10, date: 5 },
+			{ year: 2022, month: 10, date: 6 },
+			{ year: 2022, month: 10, date: 7 },
+			{ year: 2022, month: 10, date: 8 },
+		]);
+	});
+
+	test("첫째주는 이전 달 날짜도 포함한다", () => {
+		expect(getCurrentWeek({ year: 2022, month: 10, date: 1 })).toEqual([
+			{ year: 2022, month: 9, date: 25 },
+			{ year: 2022, month: 9, date: 26 },
+			{ year: 2022, month: 9, date: 27 },
+			{ year: 2022, month: 9, date: 28 },
+			{ year: 2022, month: 9, date: 29 },
+			{ year: 2022, month: 9, date: 30 },
+			{ year: 2022, month: 10, date: 1 },
+		]);
+	});
+
+	test("마지막주는 그 주에 포함된 다음달 날짜도 포함한다", () => {
+		expect(getCurrentWeek({ year: 2022, month: 10, date: 30 })).toEqual([
+			{ year: 2022, month: 10, date: 30 },
+			{ year: 2022, month: 10, date: 31 },
+			{ year: 2022, month: 11, date: 1 },
+			{ year: 2022, month: 11, date: 2 },
+			{ year: 2022, month: 11, date: 3 },
+			{ year: 2022, month: 11, date: 4 },
+			{ year: 2022, month: 11, date: 5 },
+		]);
+	});
+});
+
+describe("getTime", () => {
+	test("Convert minutes to ms", () => {
+		expect(
+			getMilliseconds({
+				minute: 1,
+			})
+		).toBe(60000);
+
+		expect(
+			getMilliseconds({
+				minute: 60,
+			})
+		).toBe(3600000);
+	});
+
+	test("Convert hours to ms", () => {
+		expect(
+			getMilliseconds({
+				hour: 1,
+			})
+		).toBe(3600000);
+
+		expect(
+			getMilliseconds({
+				hour: 24,
+			})
+		).toBe(86400000);
+	});
+
+	test("Convert days to ms", () => {
+		expect(
+			getMilliseconds({
+				date: 1,
+			})
+		).toBe(86400000);
+
+		expect(
+			getMilliseconds({
+				date: 7,
+			})
+		).toBe(604800000);
 	});
 });
 

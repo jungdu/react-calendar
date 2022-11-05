@@ -1,7 +1,17 @@
-export type CalendarDate = {
+export type CalendarDateTime = {
 	year: number;
 	month: number;
 	date: number;
+	hour: number;
+	minute: number;
 };
 
-export type CalendarMonth = Pick<CalendarDate, "year" | "month">;
+export type CalendarDate = Pick<CalendarDateTime, "year" | "month" | "date">;
+
+export type CalendarMonth = Pick<CalendarDateTime, "year" | "month">;
+
+export type Schedule = {
+	title: string;
+	startTime: number;
+	endTime: number;
+};
