@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import styled from "@emotion/styled";
 import { useCalendarState } from "../../store/calendarState";
 import {
@@ -6,11 +6,15 @@ import {
 	formatHour,
 	getCurrentWeek,
 	getMilliseconds,
-	getPercentInADay,
-	isDateInRange,
+	isScheduleInTheDate,
 } from "../../utils/date";
 import { CalendarDate, Schedule } from "../../commonTypes/date";
 import { getSteppedValue } from "../../utils/number";
+import CreateScheduleModal from "./CreateScheduleModal";
+import { nanoid } from "nanoid";
+import { EditingSchedule } from "./types";
+import { getSchedulePosition } from "./helper";
+import EditingScheduleItem from "./EditingScheduleItem";
 
 const xAxisWidth = 50;
 const rowHeight = 50;
@@ -90,39 +94,40 @@ const ScheduleEditor: React.FC = () => {
 	const datesInSelectedWeek = useCalendarState((state) =>
 		getCurrentWeek(state.selectedDate)
 	);
-	// const [schedules, setSchedules] = useState<Schedule[]>([]);
-	// const schedulesByDay = useMemo(() => {
-	// 	return datesInSelectedWeek.map((date) => {
-	// 		return schedules.filter((schedule) =>
-	// 			isScheduleInTheDate(schedule, date)
-	// 		);
-	// 	});
-	// }, [datesInSelectedWeek, schedules]);
-	const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
+	const [schedules, setSchedules] = useState<Schedule[]>([]);
+	const schedulesByDay = useMemo(() => {
+		return datesInSelectedWeek.map((date) => {
+			return schedules.filter((schedule) =>
+				isScheduleInTheDate(schedule, date)
+			);
+		});
+	}, [datesInSelectedWeek, schedules]);
+	const [editingSchedule, setEditingSchedule] =
+		useState<EditingSchedule | null>(null);
 
 	const handleClickMouseDown = (e1: React.MouseEvent, date: CalendarDate) => {
-		const clickedTime = getClickedTime(e1, date);
+		const containerElem = e1.currentTarget as HTMLElement;
+		const clickedTime = getClickedTime(e1, containerElem, date);
 		const startRange = getStartRange(clickedTime);
-
-		setEditingSchedule(() => ({
-			title: "New Schedule",
+		const newSchedule = {
+			id: nanoid(),
+			title: "(No Title)",
 			startTime: startRange.startTime,
 			endTime: startRange.endTime,
-		}));
+			firstDragging: true,
+		};
+		setEditingSchedule(() => newSchedule);
 
 		const handleMouseMove = (e2: MouseEvent) => {
-			const clickedTime = getClickedTime(e2, date);
+			const clickedTime = getClickedTime(e2, containerElem, date);
 			const nextTime = getNextTime(startRange, clickedTime);
-			setEditingSchedule(
-				(prev) =>
-					prev && {
-						...prev,
-						...nextTime,
-					}
-			);
+			newSchedule.startTime = nextTime.startTime;
+			newSchedule.endTime = nextTime.endTime;
+			setEditingSchedule(() => ({ ...newSchedule }));
 		};
 
 		const handleMouseUp = () => {
+			setEditingSchedule(() => ({ ...newSchedule, firstDragging: false }));
 			document.removeEventListener("mousemove", handleMouseMove);
 			document.removeEventListener("mouseup", handleMouseUp);
 		};
@@ -131,75 +136,62 @@ const ScheduleEditor: React.FC = () => {
 		document.addEventListener("mouseup", handleMouseUp);
 	};
 
-	const renderEditingSchedule = (date: CalendarDate) => {
-		if (!editingSchedule) {
-			return null;
-		}
-		if (!isScheduleInTheDate(editingSchedule, date)) {
-			return null;
-		}
-
-		const { top, height } = getSchedulePosition(editingSchedule, date);
-		return (
-			<div
-				style={{
-					position: "absolute",
-					top: top,
-					height: height,
-					backgroundColor: "#65a9ed",
-					width: "100%",
-					fontSize: "15px",
-				}}
-			>
-				{editingSchedule.title}
-			</div>
-		);
-	};
-
 	return (
-		<StyledScheduleEditor>
-			<h1>Schedule Editor</h1>
-			<StyledGrid>
-				<StyledXAxis>
-					{hours.map((hour) => (
-						<StyledHourRow key={hour}>
-							<StyledHourText>{formatHour(hour + 1)}</StyledHourText>
-						</StyledHourRow>
-					))}
-				</StyledXAxis>
-				{datesInSelectedWeek.map((date, i) => {
-					return (
-						<StyledBorderedColumn>
-							<StyledDateHeader>{date.date}</StyledDateHeader>
-							{renderEditingSchedule(date)}
-							<StyledColumnClickArea
-								onMouseDown={(e) => {
-									handleClickMouseDown(e, date);
-								}}
-							/>
-							{/* {schedulesByDay[i].map((schedule, j) => {
-								const { top, height } = getSchedulePosition(schedule, date);
-								return (
-									<div
-										key={`item-${i}-${j}`}
-										style={{
-											position: "absolute",
-											top: top,
-											height: height,
-											backgroundColor: "#1e90ff",
-											width: "100%",
-											fontSize: "15px",
-										}}
-									>
-										{schedule.title}
-									</div>
-								);
-							})} */}
-						</StyledBorderedColumn>
-					);
-				})}
-			</StyledGrid>
-		</StyledScheduleEditor>
+		<>
+			<StyledScheduleEditor>
+				<h1>Schedule Editor</h1>
+				<StyledGrid>
+					<StyledXAxis>
+						{hours.map((hour) => (
+							<StyledHourRow key={hour}>
+								<StyledHourText>{formatHour(hour + 1)}</StyledHourText>
+							</StyledHourRow>
+						))}
+					</StyledXAxis>
+					{datesInSelectedWeek.map((date, i) => {
+						return (
+							<StyledBorderedColumn>
+								<StyledDateHeader>{date.date}</StyledDateHeader>
+								<EditingScheduleItem
+									calendarDate={date}
+									editingSchedule={editingSchedule}
+								/>
+								<StyledColumnClickArea
+									onMouseDown={(e) => {
+										handleClickMouseDown(e, date);
+									}}
+								/>
+								{schedulesByDay[i].map((schedule, j) => {
+									const { top, height } = getSchedulePosition(schedule, date);
+									return (
+										<div
+											key={`item-${i}-${j}`}
+											style={{
+												position: "absolute",
+												top: top,
+												height: height,
+												backgroundColor: "#1e90ff",
+												width: "100%",
+												fontSize: "15px",
+											}}
+										>
+											{schedule.title}
+										</div>
+									);
+								})}
+							</StyledBorderedColumn>
+						);
+					})}
+				</StyledGrid>
+			</StyledScheduleEditor>
+			<CreateScheduleModal
+				editingSchedule={editingSchedule}
+				setEditingSchedule={setEditingSchedule}
+				saveSchedule={(schedule) => {
+					setSchedules((prev) => [...prev, schedule]);
+				}}
+			/>
+		</>
 	);
 };
 
@@ -249,30 +241,12 @@ function getStartRange(clickedTime: number) {
 	};
 }
 
-function isScheduleInTheDate(schedule: Schedule, calendarDate: CalendarDate) {
-	return isDateInRange(new Date(schedule.startTime), {
-		start: calendarDate,
-		end: {
-			...calendarDate,
-			date: calendarDate.date + 1,
-		},
-	});
-}
-
-function getSchedulePosition(schedule: Schedule, calendarDate: CalendarDate) {
-	const startDateTime = convertToJsDate(calendarDate).getTime();
-	const startPercent = getPercentInADay(schedule.startTime - startDateTime);
-	const endPercent = getPercentInADay(schedule.endTime - startDateTime);
-
-	return {
-		top: `${startPercent}%`,
-		height: `${endPercent - startPercent}%`,
-	};
-}
-
-function getClickedTime(e: React.MouseEvent | MouseEvent, date: CalendarDate) {
-	const target = e.target as HTMLElement;
-	const rect = target.getBoundingClientRect();
+function getClickedTime(
+	e: React.MouseEvent | MouseEvent,
+	containerElem: HTMLElement,
+	date: CalendarDate
+) {
+	const rect = containerElem.getBoundingClientRect();
 	const y = e.clientY - rect.top;
 	const jsDate = convertToJsDate(date);
 	const result =

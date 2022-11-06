@@ -2,6 +2,7 @@ import {
 	CalendarDate,
 	CalendarDateTime,
 	CalendarMonth,
+	Schedule,
 } from "../commonTypes/date";
 
 export function convertToCalendarDate(date: Date): CalendarDateTime {
@@ -199,4 +200,17 @@ export function isDateInRange(
 		date.getTime() >= getDateTime(range.start) &&
 		date.getTime() < getDateTime(range.end)
 	);
+}
+
+export function isScheduleInTheDate(
+	schedule: Schedule,
+	calendarDate: CalendarDate
+) {
+	return isDateInRange(new Date(schedule.startTime), {
+		start: calendarDate,
+		end: {
+			...calendarDate,
+			date: calendarDate.date + 1,
+		},
+	});
 }
