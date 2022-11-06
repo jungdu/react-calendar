@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import React from "react";
 import { createPortal } from "react-dom";
 import { Schedule } from "../../commonTypes/date";
+import { formatDate } from "../../utils/date";
 import { EditingSchedule } from "./types";
 
 const StyledModalContainer = styled.div`
@@ -34,6 +35,31 @@ const StyledModal = styled.div`
 	padding: 20px;
 `;
 
+const StyledTitle = styled.div`
+	margin-bottom: 10px;
+`;
+
+const StyledTitleInput = styled.input`
+	font-size: 20px;
+	padding: 4px;
+`;
+
+const StyledButtonContainer = styled.div`
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 20px;
+`;
+
+const StyledButton = styled.button`
+	font-size: 15px;
+	padding: 4px 8px;
+	margin-right: 10px;
+	border-radius: 4px;
+	border: 1px solid #999;
+	background-color: #fff;
+	color: #555;
+`;
+
 interface Props {
 	editingSchedule: EditingSchedule | null;
 	setEditingSchedule: (editingSchedule: EditingSchedule | null) => void;
@@ -58,17 +84,32 @@ const CreateScheduleModal: React.FC<Props> = ({
 		setEditingSchedule(null);
 	};
 
+	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setEditingSchedule({
+			...editingSchedule,
+			title: e.target.value,
+		});
+	};
+
 	return createPortal(
 		<StyledModalContainer>
 			<StyledDimmed />
 			<StyledModal>
-				<div>{editingSchedule.title}</div>
-				<div>시작: {editingSchedule.startTime}</div>
-				<div>종료: {editingSchedule.endTime}</div>
+				<StyledTitle>
+					<StyledTitleInput
+						value={editingSchedule.title}
+						onChange={handleChangeTitle}
+					/>
+				</StyledTitle>
 				<div>
-					<button onClick={handleSave}>저장</button>
-					<button onClick={handleCancel}>취소</button>
+					{formatDate(editingSchedule.startTime, "YYYY년 MM월 DD일 ")}{" "}
+					{formatDate(editingSchedule.startTime, "hh:mm")} -{" "}
+					{formatDate(editingSchedule.endTime, "hh:mm")}
 				</div>
+				<StyledButtonContainer>
+					<StyledButton onClick={handleSave}>SAVE</StyledButton>
+					<StyledButton onClick={handleCancel}>CANCEL</StyledButton>
+				</StyledButtonContainer>
 			</StyledModal>
 		</StyledModalContainer>,
 		modalRoot

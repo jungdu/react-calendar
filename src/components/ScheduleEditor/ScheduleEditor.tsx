@@ -13,8 +13,8 @@ import { getSteppedValue } from "../../utils/number";
 import CreateScheduleModal from "./CreateScheduleModal";
 import { nanoid } from "nanoid";
 import { EditingSchedule } from "./types";
-import { getSchedulePosition } from "./helper";
 import EditingScheduleItem from "./EditingScheduleItem";
+import ScheduleItem from "./ScheduleItem";
 
 const xAxisWidth = 50;
 const rowHeight = 50;
@@ -161,24 +161,9 @@ const ScheduleEditor: React.FC = () => {
 										handleClickMouseDown(e, date);
 									}}
 								/>
-								{schedulesByDay[i].map((schedule, j) => {
-									const { top, height } = getSchedulePosition(schedule, date);
-									return (
-										<div
-											key={`item-${i}-${j}`}
-											style={{
-												position: "absolute",
-												top: top,
-												height: height,
-												backgroundColor: "#1e90ff",
-												width: "100%",
-												fontSize: "15px",
-											}}
-										>
-											{schedule.title}
-										</div>
-									);
-								})}
+								{schedulesByDay[i].map((schedule) => (
+									<ScheduleItem schedule={schedule} date={date} />
+								))}
 							</StyledBorderedColumn>
 						);
 					})}
